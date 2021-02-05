@@ -2,8 +2,6 @@
 
 
 ## Library OS
-
-# Presentations and Blogs
   * (Pres) [Library OS is the New Container](https://events19.linuxfoundation.org/wp-content/uploads/2017/12/Library-OS-is-the-New-Container-Why-is-Library-OS-A-Better-Option-for-Compatibility-and-Sandboxing-Chia-Che-Tsai-UC-Berkeley.pdf) - a brief intro to LibraryOS with a focus on Graphene-SGX
   * (Article) [Graphene-SGX: A Practical Library OS for
 Unmodified Applications on SGX](https://www.usenix.org/system/files/conference/atc17/atc17-tsai.pdf)
