@@ -1,4 +1,15 @@
 
+
+## Notes 2021-02-05
+    1. [ADMIN] RISE Contract is DONE!
+    2. [ADMIN] KTH examiner (RobertoG) and supervisor (DanielB) is confirmed.
+    3. [TODO] List of literature (links for literature on LibraryOS available)
+    5. [TODO] Create a timeplan for the thesis
+    6. [THESIS] Discussion points:
+        - benchmarking deltas: ONNX on different libOSs
+        - choosing the right use case considering the onnx capabilities
+
+
 ## Notes 2021-01-29
 
 1. [ADMIN] RISE Contract is in process
