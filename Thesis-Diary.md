@@ -1,3 +1,10 @@
+## Notes 2021-02-12
+    1. [DONE] List of literature - updated the readme; two main topics: SGX and libraryOS
+    2. [DONE] High level time-plan;
+    3. [ADMIN] Setting up the email and accessing the intranet;
+    4. [ADMIN] Lenovo Laptop with SGX support and Azure VM will be provided when the time comes;
+    5. Nicolae: Go through literature and potentially suggest more resources;
+
 
 
 ## Notes 2021-02-05
