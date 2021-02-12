@@ -35,5 +35,4 @@ for omni-programmable systems](https://dl.acm.org/doi/pdf/10.1145/3102980.310299
   * (Article) [TensorSCONE: A Secure TensorFlow Framework using Intel SGX](https://arxiv.org/abs/1902.04413)
   * (Article) [Privacy Preserving Deep Neural Network Prediction using Trusted Hardware](https://aaltodoc.aalto.fi/handle/123456789/34699)
   * (Article) [Privado: Practical and Secure DNN Inference with Enclaves](https://arxiv.org/pdf/1810.00602)
-## TF Trusted
   * (Project) [TF Trusted](https://github.com/capeprivacy/tf-trusted)
