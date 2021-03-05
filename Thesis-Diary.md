@@ -5,7 +5,7 @@
       * Is it worth protecting the architecture or is protecting the
         parameters enough?  
       * Implementing an architecture with discrete conversion Enclaves
-      * Focus on **performance** first
+      * Focus on **performance** first (potentially relevant paper: https://arxiv.org/pdf/2010.08440.pdf)
       * Focus on **side-channel attacks** second
     3. Arrange the SGX-enabled laptop and Azure VM.
 
