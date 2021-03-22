@@ -1,0 +1,38 @@
+diff --git a/cmake/CMakeLists.txt b/cmake/CMakeLists.txt
+index 5307f4f85..fc3c3b290 100644
+--- a/cmake/CMakeLists.txt
++++ b/cmake/CMakeLists.txt
+@@ -148,6 +148,11 @@ option(onnxruntime_ENABLE_CPU_FP16_OPS "Build with advanced instruction sets" ON
+ option(onnxruntime_USE_NCCL "Build with NCCL support" OFF)
+ option(onnxruntime_USE_MPI "Build with MPI support" OFF)
+ 
++option(onnxruntime_OCCLUM "Build for occlum" OFF)
++
++if (onnxruntime_OCCLUM)
++  add_definitions(-D__OCCLUM__)
++endif()
+ 
+ # Fuzz test has only been tested with BUILD_SHARED_LIB option,
+ # using the MSVC compiler and on windows OS.
+diff --git a/onnxruntime/core/platform/posix/stacktrace.cc b/onnxruntime/core/platform/posix/stacktrace.cc
+index 8493364cc..601af1ae3 100644
+--- a/onnxruntime/core/platform/posix/stacktrace.cc
++++ b/onnxruntime/core/platform/posix/stacktrace.cc
+@@ -3,7 +3,7 @@
+ 
+ #include "core/common/common.h"
+ 
+-#ifndef __ANDROID__
++#if !defined(__ANDROID__) && !defined(__OCCLUM__)
+ #include <execinfo.h>
+ #endif
+ #include <vector>
+@@ -13,7 +13,7 @@ namespace onnxruntime {
+ std::vector<std::string> GetStackTrace() {
+   std::vector<std::string> stack;
+ 
+-#if !defined(NDEBUG) && !defined(__ANDROID__)
++#if !defined(NDEBUG) && !defined(__ANDROID__) && !defined(__OCCLUM__)
+   constexpr int kCallstackLimit = 64;  // Maximum depth of callstack
+ 
+   void* array[kCallstackLimit];

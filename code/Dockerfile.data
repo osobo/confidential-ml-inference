@@ -1,0 +1,56 @@
+FROM ubuntu:18.04
+
+RUN \
+    apt-get update && \
+    DEBIAN_FRONTEND="noninteractive" apt-get install -y --no-install-recommends \
+        cmake \
+        ca-certificates \
+        g++ \
+        libprotobuf-dev \
+        make \
+        protobuf-compiler \
+        python3 \
+        python3-dev \
+        python3-pip \
+        unzip \
+        wget && \
+    pip3 install setuptools wheel && \
+    pip3 install numpy onnx
+
+COPY utils/dl-and-verify.sh /tmp/utils/
+
+# Download and set up mnist dataset
+ARG MNIST_URL=https://data.deepai.org/mnist.zip
+ARG MNIST_SHA2=46946c956f8e78af364c04e4b31d6e34c1311bc49adfb575c0c148eae948d010
+COPY setup-mnist.py /root/models_and_data/mnist/
+RUN \
+    cd /root/models_and_data/mnist && \
+    /tmp/utils/dl-and-verify.sh $MNIST_URL mnist.zip $MNIST_SHA2 && \
+    unzip mnist.zip && \
+    python3 setup-mnist.py && \
+    ls | grep -v -E '^testdata.pkl.gz$' | xargs rm
+
+# Download mnist model in onnx format
+ARG MNIST_MODEL_URL=https://github.com/onnx/models/raw/master/vision/classification/mnist/model/mnist-8.onnx
+ARG MNIST_MODEL_SHA2=2f06e72de813a8635c9bc0397ac447a601bdbfa7df4bebc278723b958831c9bf
+RUN \
+    cd /root/models_and_data/mnist && \
+    /tmp/utils/dl-and-verify.sh $MNIST_MODEL_URL model.onnx $MNIST_MODEL_SHA2
+
+ARG RESNET_URL=https://github.com/onnx/models/raw/master/vision/classification/resnet/model/resnet18-v2-7.tar.gz
+ARG RESNET_SHA2=b94e8dd1543f36149ade0767232398f9e7eb4921047f4ae7c261a32cf0ecc659
+RUN \
+    mkdir /root/models_and_data/resnet && \
+    cd /root/models_and_data/resnet && \
+    /tmp/utils/dl-and-verify.sh "$RESNET_URL" resnet.tar.gz "$RESNET_SHA2" && \
+    tar -xf resnet.tar.gz && \
+    rm resnet.tar.gz
+
+COPY setup-resnet.py /root/models_and_data/resnet/
+RUN \
+    cd /root/models_and_data/resnet && \
+    python3 setup-resnet.py && \
+    mv resnet18v2/*.onnx model.onnx && \
+    rm -rf resnet18v2 setup-resnet.py
+
+# ex: ft=dockerfile

@@ -1,0 +1,73 @@
+FROM alpine:3.11
+
+RUN \
+    apk update && \
+    apk --no-cache add \
+        bash \
+        ca-certificates \
+        cmake \
+        g++ \
+        git \
+        linux-headers \
+        make \
+        py3-numpy-dev \
+        py3-pip \
+        py3-setuptools \
+        python3-dev \
+        wget && \
+    pip3 install \
+        flake8 \
+        flatbuffers \
+        wheel
+
+ARG ONNX_COMMIT=0d0eb2c85ca399d1d5a39f4f11edbb34fdb78756
+ARG ONNX_VERSION
+WORKDIR /root
+RUN git clone https://github.com/microsoft/onnxruntime
+RUN \
+    cd onnxruntime/ && \
+    git checkout $ONNX_COMMIT && \
+    git submodule init && \
+    git submodule update \
+        cmake/external/date \
+        cmake/external/eigen \
+        cmake/external/flatbuffers \
+        cmake/external/json \
+        cmake/external/mp11 \
+        cmake/external/nsync \
+        cmake/external/onnx \
+        cmake/external/optional-lite \
+        cmake/external/protobuf \
+        cmake/external/re2 \
+        cmake/external/SafeInt/safeint
+
+COPY onnxruntime.${ONNX_COMMIT}.diff /root/onnxruntime/patch.diff
+RUN \
+    cd /root/onnxruntime && \
+    git apply ./patch.diff
+
+RUN \
+    cd /root/onnxruntime && \
+    /bin/bash ./build.sh \
+        --skip_submodule_sync \
+        --use_openmp \
+        --config Release \
+        --update \
+        --build \
+        --parallel \
+        --skip_tests \
+        --build_wheel \
+        --build_shared_lib \
+        --cmake_extra_defines \
+            ONNXRUNTIME_VERSION=$(cat ./VERSION_NUMBER) \
+            onnxruntime_BUILD_UNIT_TESTS=OFF \
+            onnxruntime_OCCLUM=ON
+
+RUN \
+    cd /root && \
+    ln -s /root/onnxruntime/build/Linux/Release/dist/onnxruntime-*-linux_x86_64.whl
+RUN basename "$(ls /root/onnxruntime/build/Linux/Release/dist/onnxruntime-*-linux_x86_64.whl)" >/root/ort-whl-name
+RUN ls -la /root
+RUN pip3 install /root/"$(cat /root/ort-whl-name)"
+
+# ex: ft=dockerfile

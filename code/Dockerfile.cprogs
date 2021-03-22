@@ -1,0 +1,16 @@
+FROM alpine:3.11
+
+RUN \
+    apk update && \
+    apk --no-cache add gcc g++ make
+
+COPY --from=cmli-ort \
+    /root/onnxruntime/include/onnxruntime/core/session/onnxruntime_c_api.h \
+    /usr/include/
+COPY --from=cmli-ort \
+    /root/onnxruntime/build/Linux/Release/libonnxruntime.so* \
+    /usr/lib/
+COPY inference-server/ /root/inference-server/
+RUN cd /root/inference-server && make
+
+# ex: ft=dockerfile
