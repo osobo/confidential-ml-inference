@@ -1,3 +1,13 @@
+## Notes 2021-03-26
+   1. EPC size on Azure 26MB, 2MB; Thinkpad: 96 MB; why are there multiple sections? why on Azure? does this bring an advantage for virtualized deployments?
+   2. Videos from OC3: https://youtube.com/playlist?list=PLEhAl3D5WVvSKTp9jD6lV67zuFR8lUZVa
+   3. Microcode releases - new results, latest releases improve performance.
+   4. OCALLS
+   5. SGX Open source projects https://github.com/Maxul/Awesome-SGX-Open-Source
+   6. ONNX in SGX from microsoft: https://github.com/microsoft/onnx-server-openenclave
+   7. Idea - compare performance of ONNX-on-SGX native and with a libraryOS; first step - try with existing VM, otherwise we'll look for alternatives.
+   8. Getting Tensorflow working in ONNX
+
 ## Notes 2021-03-19
     1. Rewritten the benchmarking infrastructure to have better control;
     2. Tried different microcode releases - performance differences are limited (1,5% slower) - make sure to have a robust and reproducible benchmark;
