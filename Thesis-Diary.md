@@ -1,9 +1,24 @@
+## Notes 2021-03-19
+    1. Rewritten the benchmarking infrastructure to have better control;
+    2. Tried different microcode releases - performance differences are limited (1,5% slower) - make sure to have a robust and reproducible benchmark;
+    3. On Azure the performance impact is much larger - note as a result;
+    4. Explore running only 1 thread to reduce number of OCALLs;
+    5. Investigate reducing the EPC size;
+    6. Do the conversion to include for timing;
+    7. Investigate small batch sizes (1) with small pieces of data.
+
+## Notes 2021-03-11
+    1. Laptop - set up, progress.
+    2. Azure VM - could ssh, all good;
+    3. Client process/server process - inference outside and inside Occlum;
+    4. Discussion about efficient IO: http://www.diva-portal.org/smash/get/diva2:1416013/FULLTEXT01.pdf
+    5. Discussion about approaches to measurements; three factors: hardware/platform, library OS (or not)
+
 ## Notes 2021-03-05
     1. Discussion about Privado;
     2. Discussion about further steps:
       * Time to run ONNX in SGX
-      * Is it worth protecting the architecture or is protecting the
-        parameters enough?  
+      * Is it worth protecting the architecture or is protecting the parameters enough?  
       * Implementing an architecture with discrete conversion Enclaves
       * Focus on **performance** first (potentially relevant paper: https://arxiv.org/pdf/2010.08440.pdf)
       * Focus on **side-channel attacks** second
