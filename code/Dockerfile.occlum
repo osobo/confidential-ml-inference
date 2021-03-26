@@ -1,0 +1,171 @@
+# Based on tools/docker/Dockerfile.ubuntu18.04 from Occlum
+
+FROM alpine:3.11 as alpine-with-openjdk
+
+RUN \
+    apk update && \
+    apk --no-cache add openjdk11
+
+FROM ubuntu:18.04
+
+COPY utils/dl-and-verify.sh /tmp/utils/
+
+# Occlum building based on Dockerfile from occlum repo
+
+ARG CMAKE_VERSION=3.18.2
+ARG CMAKE_SHA2=7b73ef901eb9fe615977a4f2254521cf9ee9da7efcd20c621a61ead51a870948
+
+WORKDIR /tmp
+RUN \
+    apt-get update && \
+    DEBIAN_FRONTEND="noninteractive" apt-get install -y --no-install-recommends \
+        alien \
+        astyle \
+        autoconf \
+        automake \
+        bison \
+        build-essential \
+        ca-certificates \
+        curl \
+        debhelper \
+        expect \
+        g++ \
+        gawk \
+        gdb \
+        git-core \
+        golang-go \
+        jq \
+        kmod \
+        lcov \
+        libboost-system-dev \
+        libboost-thread-dev \
+        libcurl4-openssl-dev \
+        libfuse-dev \
+        libjsoncpp-dev \
+        liblog4cpp5-dev \
+        libprotobuf-c0-dev \
+        libprotobuf-dev \
+        libssl-dev \
+        libtool \
+        libxml2-dev \
+        ocaml \
+        ocamlbuild \
+        pkg-config \
+        protobuf-compiler \
+        python \
+        python-pip \
+        python3 \
+        python3-pip \
+        sudo \
+        unzip \
+        uuid-dev \
+        vim \
+        wget \
+        zip && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    /tmp/utils/dl-and-verify.sh \
+        https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-Linux-x86_64.tar.gz \
+        cmake.tar.gz \
+        $CMAKE_SHA2 && \
+    tar -xf cmake.tar.gz --strip=1 -C /usr && \
+    rm cmake.tar.gz && \
+    pip3 install \
+        flake8 \
+        flatbuffers \
+        wheel
+
+# Install cpuid tool for tests
+ARG CPUID_URL=http://www.etallen.com/cpuid/cpuid-20200211.x86_64.tar.gz
+ARG CPUID_SHA2=a7bbefd7501092dce23923c0ca13db8fdfb19030e4b583fd2464582defb68ecb
+WORKDIR /tmp
+RUN \
+    /tmp/utils/dl-and-verify.sh "$CPUID_URL" cpuid.tar.gz "$CPUID_SHA2" && \
+    tar -xf ./cpuid.tar.gz && \
+    cp ./cpuid-20200211/cpuid /usr/bin/ && \
+    rm -rf /tmp/cpuid*
+
+# Install SGX SDK
+ARG OCCLUM_LINUX_SGX_COMMIT=e150db9ee0e8be0757d88da2f45c6f1c8d08238a
+WORKDIR /tmp
+RUN \
+    git clone -b sgx_2.11_for_occlum https://github.com/occlum/linux-sgx && \
+    mkdir /etc/init && \
+    cd linux-sgx && \
+    git checkout $OCCLUM_LINUX_SGX_COMMIT && \
+    ./compile_and_install.sh no_mitigation USE_OPT_LIBS=2 && \
+    echo 'source /opt/intel/sgxsdk/environment' >> /root/.bashrc && \
+    rm -rf /tmp/linux-sgx
+
+# Install Rust
+ENV PATH="/root/.cargo/bin:$PATH"
+ENV OCCLUM_RUST_VERSION=nightly-2020-09-08
+RUN \
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
+        sh -s -- --default-toolchain ${OCCLUM_RUST_VERSION} -y && \
+    rm -rf /root/.cargo/registry && \
+    rm -rf /root/.cargo/git && \
+    cargo -V \
+    cargo install --no-default-features sccache
+
+ARG OCCLUM_COMMIT=a789871d93f64000666eb0ca9760381c93b6768e
+WORKDIR /root
+RUN \
+    git clone https://github.com/occlum/occlum && \
+    cd occlum && \
+    git checkout $OCCLUM_COMMIT
+
+WORKDIR /root/occlum
+
+# Install Occlum toolchain
+RUN \
+    cd ./tools/toolchains/musl-gcc && \
+    ./build.sh && \
+    ./install_zlib.sh
+ENV PATH="/opt/occlum/build/bin:/usr/local/occlum/bin:$PATH"
+
+# Install glibc
+RUN \
+    cd ./tools/toolchains/glibc && \
+    ./build.sh
+
+# Install Occlum Golang toolchain
+RUN \
+    cd ./tools/toolchains/golang && \
+    ./build.sh
+ENV PATH="/opt/occlum/toolchains/golang/bin:$PATH"
+
+# Install Occlum Rust toolchain
+RUN \
+    cd ./tools/toolchains/rust && \
+    ./build.sh
+ENV PATH="/opt/occlum/toolchains/rust/bin:$PATH"
+ENV LD_LIBRARY_PATH="/opt/intel/sgxsdk/sdk_libs"
+
+# Install Occlum Java toolchain (JDK 11)
+ARG JDK11_PATH=/opt/occlum/toolchains/jvm/java-11-openjdk
+COPY --from=alpine-with-openjdk /usr/lib/jvm/java-11-openjdk $JDK11_PATH
+RUN rm $JDK11_PATH/lib/security/cacerts
+COPY --from=alpine-with-openjdk /etc/ssl/certs/java/cacerts $JDK11_PATH/lib/security/cacerts
+RUN \
+    cd ./tools/toolchains/java && \
+    ./install_dragonwell.sh
+ENV PATH="/opt/occlum/toolchains/jvm/bin:$PATH"
+
+# Install Occlum
+RUN \
+    make submodule && \
+    OCCLUM_RELEASE_BUILD=1 make && \
+    make install && \
+    cp -r demos /root/demos
+
+# Start AESM service automatically
+#
+# To do so, we add the script to ~/.bashrc. We cannot use systemd to run AESM
+# as a "real" service since the pid 1 is not systemd in Docker. So we start
+# up AESM service when an user login with an interative shell.
+RUN \
+    cp /root/occlum/tools/docker/start_aesm.sh /opt/occlum && \
+    echo '/opt/occlum/start_aesm.sh' >> /root/.bashrc
+
+# ex: ft=dockerfile

@@ -1,0 +1,31 @@
+FROM alpine:3.11
+
+RUN \
+    apk update && \
+    apk --no-cache add \
+        libgomp \
+        libstdc++ \
+        py3-numpy \
+        python3
+
+# Get ort library used by server
+COPY --from=cmli-ort \
+    /root/onnxruntime/build/Linux/Release/libonnxruntime.so* \
+    /usr/lib/
+
+# Get client and script for summarizing output
+COPY inference*.py summarize-nums.py /root/
+
+# Get server
+COPY --from=cmli-cprogs \
+    /root/inference-server/bin/inference-server \
+    /root/
+
+# Get data and models
+COPY --from=cmli-data /root/models_and_data/ /root/models_and_data/
+
+# Setup docker entrypoint
+COPY run-local-inference.sh /root/entrypoint.sh
+ENTRYPOINT ["/root/entrypoint.sh"]
+
+# ex: ft=dockerfile

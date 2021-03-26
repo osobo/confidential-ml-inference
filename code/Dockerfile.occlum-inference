@@ -1,0 +1,54 @@
+FROM cmli-occlum
+
+RUN pip3 install numpy
+
+# Default to HW if not set here. Can be set to SIM for simulation mode.
+ARG OCCLUM_SGX_MODE=
+ENV SGX_MODE=$OCCLUM_SGX_MODE
+
+# Create occlum workspace
+RUN \
+    mkdir /root/occlum_workspace && \
+    cd /root/occlum_workspace && \
+    occlum init
+
+# Set up occlum image rootfs
+WORKDIR /root/occlum_workspace/image
+# Use c++ stdlib from alpine instead of from occlum
+COPY --from=cmli-ort \
+    /usr/lib/libstdc++*.so* \
+    lib/
+# Get ort library used by server
+COPY --from=cmli-ort \
+    /root/onnxruntime/build/Linux/Release/libonnxruntime.so* \
+    lib/
+# Inference server
+COPY --from=cmli-cprogs \
+    /root/inference-server/bin/inference-server \
+    bin/
+# Model
+ARG DATASET_NAME
+RUN [ -n "$DATASET_NAME" ]
+COPY --from=cmli-data /root/models_and_data/"$DATASET_NAME"/model.onnx root/
+
+# Run occlum build
+WORKDIR /root
+COPY utils/update-occlum-json.sh utils/Occlum.json /tmp/utils/
+RUN \
+    /tmp/utils/update-occlum-json.sh \
+        occlum_workspace/Occlum.json \
+        /tmp/utils/Occlum.json && \
+    cd occlum_workspace && \
+    occlum build
+
+COPY inference-client.py summarize-nums.py /root/
+COPY --from=cmli-data /root/models_and_data/"$DATASET_NAME"/testdata.pkl.gz /root/
+
+#ENV OCCLUM_LOG_LEVEL=trace
+
+# Setup docker entrypoint
+WORKDIR /root
+COPY run-occlum-inference.sh entrypoint.sh
+ENTRYPOINT ["/root/entrypoint.sh"]
+
+# ex: ft=dockerfile

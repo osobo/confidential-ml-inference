@@ -1,0 +1,9 @@
+{
+  "resource_limits": {
+    "kernel_space_heap_size": "128MB",
+    "user_space_size": "512MB"
+  },
+  "process": {
+    "default_mmap_size": "400MB"
+  }
+}
