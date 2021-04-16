@@ -1,12 +1,20 @@
+## Notes 2021-04-16
+   1. ONNX in SGX from Microsoft - had a look, did not manage to run it, had issues; have a binary representation of protobuffer, causes issues; retry.
+   2. Worked on the implementation of the target system - deploying a model, converting, etc:
+    - running conversion in an own enclave; tf2onnx calls tensorflow, needs too much memory.
+    - inference works; details to be ironed out;
+   3. hypothesis: reduce number of system calls leading to OCALLS (mostly due to multi-threading); making the onnx run-time single-threaded AND removing syscalls causing OCALLS made the single-threaded version faster but it was still slower than the multi-threaded version.
+  
+
 ## Notes 2021-03-26
    1. EPC size on Azure 26MB, 2MB; Thinkpad: 96 MB; why are there multiple sections? why on Azure? does this bring an advantage for virtualized deployments?
    2. Videos from OC3: https://youtube.com/playlist?list=PLEhAl3D5WVvSKTp9jD6lV67zuFR8lUZVa
    3. Microcode releases - new results, latest releases improve performance.
    4. OCALLS
    5. SGX Open source projects https://github.com/Maxul/Awesome-SGX-Open-Source
-   6. ONNX in SGX from microsoft: https://github.com/microsoft/onnx-server-openenclave
+   6. ONNX in SGX from Microsoft: https://github.com/microsoft/onnx-server-openenclave
    7. Idea - compare performance of ONNX-on-SGX native and with a libraryOS; first step - try with existing VM, otherwise we'll look for alternatives.
-   8. Getting Tensorflow working in ONNX
+   8. Getting TensorFlow working in ONNX
 
 ## Notes 2021-03-19
     1. Rewritten the benchmarking infrastructure to have better control;
